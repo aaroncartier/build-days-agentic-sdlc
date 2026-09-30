@@ -70,7 +70,7 @@ describe("participant lab documentation", () => {
     const manifest = lock
       .split(/\r?\n/)
       .find((line) => line.startsWith("# gh-aw-manifest:"));
-    const agentJob = lock.match(/  agent:\n([\s\S]*?)(?=\n  [\w-]+:\n)/)?.[1];
+    const agentJob = lock.match(/\x20{2}agent:\n([\s\S]*?)(?=\n\x20{2}[\w-]+:\n)/)?.[1];
 
     expect(frontmatter).toContain("types: [opened]");
     expect(frontmatter).toContain("roles: all");
@@ -81,7 +81,7 @@ describe("participant lab documentation", () => {
     expect(source).toContain("Ask at most one focused question");
     expect(source).toContain("Assignment is suggestion-only");
     expect(source).toContain("Never close, edit, relabel, or mark any issue");
-    expect(safeOutputs).toMatch(/add-comment:\s+max: 1\s+target: triggering/);
+    expect(safeOutputs).toMatch(/add-comment:\s+max:\s+1\s+target:\s+triggering/);
     expect(source).toContain("create-issue: false");
     expect(source).toContain("report-as-issue: false");
     expect(safeOutputs).not.toMatch(/(?:add-labels|assign-to-user|close-issue):/);
