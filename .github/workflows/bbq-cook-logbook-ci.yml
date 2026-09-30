@@ -3,32 +3,24 @@ name: BBQ Cook Logbook CI
 on:
   pull_request:
     paths:
-      - "capstone/bbq-logbook/src/**"
-      - "capstone/bbq-logbook/tests/**"
-      - "capstone/bbq-logbook/infra/**"
-      - "capstone/bbq-logbook/package.json"
-      - "capstone/bbq-logbook/package-lock.json"
-      - "capstone/bbq-logbook/.gitignore"
-      - "capstone/bbq-logbook/tsconfig*.json"
+      - "capstone/bbq-logbook/**"
       - ".github/workflows/bbq-cook-logbook-ci.yml"
       - ".github/workflows/bbq-cook-logbook-deploy.yml"
   push:
     branches:
       - main
     paths:
-      - "capstone/bbq-logbook/src/**"
-      - "capstone/bbq-logbook/tests/**"
-      - "capstone/bbq-logbook/infra/**"
-      - "capstone/bbq-logbook/package.json"
-      - "capstone/bbq-logbook/package-lock.json"
-      - "capstone/bbq-logbook/.gitignore"
-      - "capstone/bbq-logbook/tsconfig*.json"
+      - "capstone/bbq-logbook/**"
       - ".github/workflows/bbq-cook-logbook-ci.yml"
       - ".github/workflows/bbq-cook-logbook-deploy.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: bbq-cook-logbook-ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -43,54 +35,42 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20.19"
+          node-version: "22"
           cache: npm
           cache-dependency-path: capstone/bbq-logbook/package-lock.json
       - name: Install locked dependencies
+        id: install
         run: npm ci
-      - name: Run application checks
+      - name: Build and run application tests
+        id: check
         run: npm run check
-      - name: Smoke-test health, readiness, and Cook Log create/browse
+      - name: Smoke-test the built HTTP application
+        id: smoke
+        run: npm run smoke
+      - name: Publish validation summary
+        if: always()
+        env:
+          INSTALL_RESULT: ${{ steps.install.outcome }}
+          CHECK_RESULT: ${{ steps.check.outcome }}
+          SMOKE_RESULT: ${{ steps.smoke.outcome }}
+          JOB_RESULT: ${{ job.status }}
         run: |
-          node --input-type=module <<'NODE'
-          import assert from "node:assert/strict";
-          import { createCookLogApi } from "./dist/src/server/api/cook-log-api.js";
-          import { InMemoryCookLogStorage } from "./dist/src/server/storage/in-memory-cook-log-storage.js";
-
-          const api = createCookLogApi(new InMemoryCookLogStorage());
-          const live = await api(new Request("http://localhost/health/live"));
-          assert.equal(live.status, 200);
-          assert.deepEqual(await live.json(), { status: "ok" });
-
-          const ready = await api(new Request("http://localhost/health/ready"));
-          assert.equal(ready.status, 200);
-          assert.deepEqual(await ready.json(), { status: "ready" });
-
-          const cookLog = {
-            meatType: "Pork shoulder",
-            initialWeightKg: 5.4,
-            trimmedWeightKg: 4.8,
-            seasonings: ["salt", "pepper"],
-            preparationSteps: ["Trim fat cap", "Apply rub"],
-            cookEvents: [
-              { event: "Start cook", observation: "Smoker at 110 C" },
-              { event: "Wrap", observation: "Bark set" },
-            ],
-            totalCookMinutes: 420,
-            finalObservations: "Tender with a firm bark",
-            appearanceRating: 5,
-            tasteRating: 4,
-            textureRating: 5,
-          };
-          const create = await api(new Request("http://localhost/api/cook-logs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cookLog),
-          }));
-          assert.equal(create.status, 201);
-          assert.deepEqual(await create.json(), cookLog);
-
-          const browse = await api(new Request("http://localhost/api/cook-logs"));
-          assert.equal(browse.status, 200);
-          assert.deepEqual(await browse.json(), [cookLog]);
-          NODE
+          {
+            echo "## BBQ Cook Logbook CI evidence"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Locked dependency installation: \`$INSTALL_RESULT\`"
+            echo "- Build and application tests: \`$CHECK_RESULT\`"
+            echo "- Built-server HTTP smoke: \`$SMOKE_RESULT\`"
+            echo "- Overall result: \`$JOB_RESULT\`"
+            echo ""
+            echo "The smoke suite covers browser assets, liveness/readiness, invalid-input rejection, create/browse, and fail-closed Azure readiness."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain reproducible build output
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bbq-cook-logbook-dist-${{ github.sha }}
+          path: capstone/bbq-logbook/dist/
+          if-no-files-found: error
+          retention-days: 30

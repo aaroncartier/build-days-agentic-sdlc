@@ -1,9 +1,9 @@
 # BBQ Cook Logbook
 
 This is an isolated capstone application for recording and reviewing one
-self-contained BBQ cook attempt. The shared contract and its focused tests are
-the initial foundation; API, browser, persistence, and deployment work are
-separate tasks.
+self-contained BBQ cook attempt. It includes a browser client, HTTP API, and
+storage boundary with an explicit in-memory local backend and Azure Table
+production backend.
 
 ## Requirements
 
@@ -19,15 +19,35 @@ npm ci
 npm run check
 ```
 
-`npm run check` compiles the shared TypeScript contract and runs the
-contract tests. To run only those tests after a build, use:
+`npm run check` compiles the TypeScript server modules, copies the browser
+assets into `dist/client`, and runs the focused tests. To start the app locally
+with deterministic in-memory storage, run:
+
+```powershell
+$env:STORAGE_BACKEND = 'memory'
+npm start
+```
+
+The server listens on `http://localhost:8080` by default. To run the built
+application's HTTP smoke checks (including static assets, health/readiness,
+invalid input, and Cook Log create/browse), use:
+
+```powershell
+npm run smoke
+```
+
+To run only the unit and API tests after a build, use:
 
 ```powershell
 npm test
 ```
 
-The commands use only this application's package manifest and lock file; they
-do not install or change dependencies for the root feedback application.
+Production startup requires `STORAGE_BACKEND=azure` and the App Service
+managed-identity and `BBQ_TABLE_*` environment provided by the approved
+infrastructure. The app does not silently fall back to in-memory storage.
+
+These commands use only this application's package manifest and lock file;
+they do not install or change dependencies for the root feedback application.
 
 ## Ten-minute recovery
 

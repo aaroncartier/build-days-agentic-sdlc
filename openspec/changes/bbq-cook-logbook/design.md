@@ -99,10 +99,25 @@ triggers, or granting the GH-AW protected delivery permissions were rejected.
 Focused tests cover Cook Log validation, ordering, API create/browse behavior,
 accessible UI states, and persistence across application restart. A capstone
 CI path runs the app's documented checks and smoke-tests liveness, readiness,
-and the functional log workflow. Delivery evidence must also show the reviewed
-commit, protected deployment, the real issue-driven defect fix, and the single
-GH-AW output, linked so a reviewer can reconstruct the result without session
-transcripts.
+and the functional log workflow over the built application's HTTP server. The
+server uses Node's built-in HTTP modules to serve the browser assets and route
+requests to the existing API/storage boundary; it adds no runtime dependency.
+The build copies the browser assets into the deployable output. Local smoke
+tests explicitly select in-memory storage, while production selects the
+configured Azure Table adapter and reports storage failure through readiness.
+
+The capstone deployment workflow reuses the existing protected `workshop`
+environment and OIDC variables, verifies a merged BBQ pull request and its
+required checks, then performs Azure validation and `what-if` before deploying
+the built app. Its deploy job alone receives `id-token: write`. Job summaries
+and retained artifacts report commit, test, infrastructure, and live results
+only after each corresponding check succeeds. Missing environment values or
+protection remain blockers; the workflow must not substitute credentials,
+resource scope, or deployment success.
+
+Delivery evidence must also show the reviewed commit, protected deployment,
+the real issue-driven defect fix, and the single GH-AW output, linked so a
+reviewer can reconstruct the result without session transcripts.
 
 Agent reports alone were rejected as evidence; this matches root
 `DESIGN.md`'s requirement for independently observable checks and deployment
@@ -137,8 +152,11 @@ record.
 ## Validation
 
 - Run the focused contract, API, storage, and accessible UI tests, followed by
-  the app-local `npm run check` and functional `npm run smoke` from
-  `capstone/bbq-logbook/`.
+  the app-local `npm run check` and `npm run smoke` from
+  `capstone/bbq-logbook/`. Smoke must start the production HTTP entry point and
+  verify browser assets, health, readiness, invalid-input rejection, and the
+  create/browse flow; verify the not-ready HTTP response with unavailable
+  storage.
 - Build and validate the capstone Bicep entry point, then run Azure
   `what-if` against the assigned resource group and parameter file before
   deployment.
