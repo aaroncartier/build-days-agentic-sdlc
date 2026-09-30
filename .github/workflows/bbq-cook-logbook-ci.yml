@@ -1,0 +1,96 @@
+name: BBQ Cook Logbook CI
+
+on:
+  pull_request:
+    paths:
+      - "capstone/bbq-logbook/src/**"
+      - "capstone/bbq-logbook/tests/**"
+      - "capstone/bbq-logbook/infra/**"
+      - "capstone/bbq-logbook/package.json"
+      - "capstone/bbq-logbook/package-lock.json"
+      - "capstone/bbq-logbook/.gitignore"
+      - "capstone/bbq-logbook/tsconfig*.json"
+      - ".github/workflows/bbq-cook-logbook-ci.yml"
+      - ".github/workflows/bbq-cook-logbook-deploy.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "capstone/bbq-logbook/src/**"
+      - "capstone/bbq-logbook/tests/**"
+      - "capstone/bbq-logbook/infra/**"
+      - "capstone/bbq-logbook/package.json"
+      - "capstone/bbq-logbook/package-lock.json"
+      - "capstone/bbq-logbook/.gitignore"
+      - "capstone/bbq-logbook/tsconfig*.json"
+      - ".github/workflows/bbq-cook-logbook-ci.yml"
+      - ".github/workflows/bbq-cook-logbook-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: capstone/bbq-logbook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.19"
+          cache: npm
+          cache-dependency-path: capstone/bbq-logbook/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Run application checks
+        run: npm run check
+      - name: Smoke-test health, readiness, and Cook Log create/browse
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from "node:assert/strict";
+          import { createCookLogApi } from "./dist/src/server/api/cook-log-api.js";
+          import { InMemoryCookLogStorage } from "./dist/src/server/storage/in-memory-cook-log-storage.js";
+
+          const api = createCookLogApi(new InMemoryCookLogStorage());
+          const live = await api(new Request("http://localhost/health/live"));
+          assert.equal(live.status, 200);
+          assert.deepEqual(await live.json(), { status: "ok" });
+
+          const ready = await api(new Request("http://localhost/health/ready"));
+          assert.equal(ready.status, 200);
+          assert.deepEqual(await ready.json(), { status: "ready" });
+
+          const cookLog = {
+            meatType: "Pork shoulder",
+            initialWeightKg: 5.4,
+            trimmedWeightKg: 4.8,
+            seasonings: ["salt", "pepper"],
+            preparationSteps: ["Trim fat cap", "Apply rub"],
+            cookEvents: [
+              { event: "Start cook", observation: "Smoker at 110 C" },
+              { event: "Wrap", observation: "Bark set" },
+            ],
+            totalCookMinutes: 420,
+            finalObservations: "Tender with a firm bark",
+            appearanceRating: 5,
+            tasteRating: 4,
+            textureRating: 5,
+          };
+          const create = await api(new Request("http://localhost/api/cook-logs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cookLog),
+          }));
+          assert.equal(create.status, 201);
+          assert.deepEqual(await create.json(), cookLog);
+
+          const browse = await api(new Request("http://localhost/api/cook-logs"));
+          assert.equal(browse.status, 200);
+          assert.deepEqual(await browse.json(), [cookLog]);
+          NODE
