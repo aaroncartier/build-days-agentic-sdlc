@@ -1,0 +1,19 @@
+{
+  "name": "bbq-cook-logbook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json && node scripts/copy-client-assets.mjs",
+    "test": "node --test",
+    "check": "npm run build && npm test",
+    "smoke": "node tests/smoke/http-smoke.mjs",
+    "start": "node dist/src/server/main.mjs"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
+  }
+}

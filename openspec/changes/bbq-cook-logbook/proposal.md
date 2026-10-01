@@ -18,11 +18,15 @@ without expanding into recipe management or other product areas.
 - Support the primary workflow of creating and saving a cook log, then
   browsing and reviewing saved logs.
 - Specify observable validation and accessible user feedback for the workflow.
-- Meet the shared capstone delivery contract: API, durable persistence behind
-  a storage boundary, liveness and dependency-aware readiness, focused tests,
-  capstone-scoped CI/CD, protected GitHub OIDC deployment using pinned AVM
-  composition, a ticket-driven defect fix, one narrowly safe GH-AW output, and
-  transcript-free delivery evidence.
+- Make the application runnable and verifiable locally using its explicit
+  in-memory backend, API, liveness/readiness endpoints, focused tests, and
+  capstone-scoped CI.
+- Keep the durable Azure backend, pinned AVM infrastructure, protected OIDC
+  deployment, deployed defect remediation, GH-AW evidence output, and final
+  evidence chain as follow-up work. Azure-dependent work is deferred until an
+  assigned Azure subscription and resource group are available; it is not
+  considered complete based on local checks. This interim milestone does not
+  waive the shared `workshop-capstone` completion criteria.
 - Track the approved intent through the parent issue
   [#9](https://github.com/aaroncartier/build-days-agentic-sdlc/issues/9).
 
@@ -32,6 +36,8 @@ without expanding into recipe management or other product areas.
   snapshot of one attempt.
 - Photos, social features, nutrition, inventory, analytics, or configurable
   recipe authoring.
+- Provisioning or deploying Azure resources as part of the current local-only
+  milestone.
 - Changes to `src/`, the existing feedback application, or unrelated
   repository-wide delivery workflows.
 - Shipping a completed BBQ application as part of the workshop starter.
@@ -57,14 +63,16 @@ product behavior without changing that workshop-wide contract.
 - **Tests:** New focused contract, unit, API, accessible UI, persistence, and
   deployed smoke coverage for this capstone; existing feedback application
   tests remain unchanged.
-- **Infrastructure and identity:** Capstone-local infrastructure where
-  supported, using pinned AVM modules and the existing protected GitHub OIDC
-  boundary; no long-lived credentials.
-- **Workflows and security:** Capstone-specific CI/CD and narrowly scoped
-  permissions; no changes to existing workshop workflow policy.
-- **Operations and evidence:** Health/readiness and deployed functional
-  evidence, a ticket-driven bug fix, exactly one safe GH-AW output, and a
-  transcript-free evidence chain as required by `workshop-capstone`.
+- **Infrastructure and identity:** Azure infrastructure and protected OIDC
+  deployment remain designed follow-up work; no Azure resources are required
+  for the local-only milestone and no long-lived credentials are introduced.
+- **Workflows and security:** Capstone-specific local CI remains in scope.
+  Protected deployment and cloud evidence are deferred without changing
+  existing workshop workflow policy.
+- **Operations and evidence:** Local health/readiness and functional smoke
+  evidence are in scope. Deployed evidence, a deployment-driven defect fix,
+  GH-AW output, and the final cloud evidence chain remain deferred until an
+  authorized Azure environment is available.
 - **Documentation:** BBQ-specific operating and validation guidance linked to
   Lab 6 and the approved OpenSpec artifacts.
 - **Dependencies:** No dependency changes are assumed; any necessary

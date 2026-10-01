@@ -1,0 +1,76 @@
+name: BBQ Cook Logbook CI
+
+on:
+  pull_request:
+    paths:
+      - "capstone/bbq-logbook/**"
+      - ".github/workflows/bbq-cook-logbook-ci.yml"
+      - ".github/workflows/bbq-cook-logbook-deploy.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "capstone/bbq-logbook/**"
+      - ".github/workflows/bbq-cook-logbook-ci.yml"
+      - ".github/workflows/bbq-cook-logbook-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bbq-cook-logbook-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: capstone/bbq-logbook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: capstone/bbq-logbook/package-lock.json
+      - name: Install locked dependencies
+        id: install
+        run: npm ci
+      - name: Build and run application tests
+        id: check
+        run: npm run check
+      - name: Smoke-test the built HTTP application
+        id: smoke
+        run: npm run smoke
+      - name: Publish validation summary
+        if: always()
+        env:
+          INSTALL_RESULT: ${{ steps.install.outcome }}
+          CHECK_RESULT: ${{ steps.check.outcome }}
+          SMOKE_RESULT: ${{ steps.smoke.outcome }}
+          JOB_RESULT: ${{ job.status }}
+        run: |
+          {
+            echo "## BBQ Cook Logbook CI evidence"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Locked dependency installation: \`$INSTALL_RESULT\`"
+            echo "- Build and application tests: \`$CHECK_RESULT\`"
+            echo "- Built-server HTTP smoke: \`$SMOKE_RESULT\`"
+            echo "- Overall result: \`$JOB_RESULT\`"
+            echo ""
+            echo "The smoke suite covers browser assets, liveness/readiness, invalid-input rejection, create/browse, and fail-closed Azure readiness."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Retain reproducible build output
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bbq-cook-logbook-dist-${{ github.sha }}
+          path: capstone/bbq-logbook/dist/
+          if-no-files-found: error
+          retention-days: 30
