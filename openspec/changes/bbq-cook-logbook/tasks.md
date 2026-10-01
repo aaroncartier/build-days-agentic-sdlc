@@ -26,6 +26,10 @@
   `capstone/bbq-logbook/tests/api/**` and verify create/list, rejection
   without persistence, safe errors, and readiness failure for unavailable
   storage.
+- [x] 2.3 Add a dependency-free production HTTP entry point under
+  `capstone/bbq-logbook/src/server/**` that serves the built browser assets
+  and routes requests through the existing API and storage boundary; package
+  client assets reproducibly and verify production storage selection.
 
 ## 3. Accessible browser workflow
 
@@ -43,8 +47,10 @@
 - [x] 4.1 After task groups 2 and 3, add only
   `.github/workflows/bbq-cook-logbook-ci.yml` with read-only permissions and
   app-scoped path filters; verify workflow syntax, path-filter inclusion and
-  exclusion, app-local checks, functional smoke coverage, and unchanged
-  behavior of existing workshop workflows.
+  exclusion, locked dependency installation, app checks/build, and an HTTP
+  smoke of the built production server covering static assets, liveness,
+  readiness, validation rejection, and Cook Log create/browse. Verify existing
+  workshop workflows remain unchanged.
 
 ## 5. Azure infrastructure and protected deployment
 
@@ -55,9 +61,11 @@
 - [ ] 5.2 After task 5.1, add only
   `.github/workflows/bbq-cook-logbook-deploy.yml` using the protected
   environment and existing GitHub OIDC trust with required
-  permissions, granting `id-token: write` only to the deployment job; verify
-  workflow policy, absence of long-lived credentials, and that deployment is
-  scoped to the assigned environment/resources.
+  permissions, granting `id-token: write` only to the deployment job. Require
+  a merged BBQ pull request, passing required checks, the assigned environment
+  variables, and successful Azure validation/what-if before deployment; emit
+  actionable summaries and a machine-readable receipt only for verified
+  results. Verify workflow policy and absence of long-lived credentials.
 - [ ] 5.3 After tasks 4 and 5.2, deploy the reviewed application and capture
   commit, URL, infrastructure result, liveness, readiness, and a
   create-and-review smoke result; verify saved data remains available after
