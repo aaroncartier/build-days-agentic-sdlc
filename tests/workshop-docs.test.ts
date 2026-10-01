@@ -62,6 +62,45 @@ describe("participant lab documentation", () => {
     expect(normalized).toContain("Do not use `main` or `latest`");
   });
 
+  it("keeps new-issue triage read-only except for one bounded triggering-issue comment", () => {
+    const source = read(".github/workflows/new-issue-triage.md");
+    const lock = read(".github/workflows/new-issue-triage.lock.yml");
+    const frontmatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---/m)?.[1] ?? "";
+    const safeOutputs = frontmatter.match(/safe-outputs:\r?\n([\s\S]*)/)?.[1] ?? "";
+    const manifest = lock
+      .split(/\r?\n/)
+      .find((line) => line.startsWith("# gh-aw-manifest:"));
+    const agentJob = lock.match(/\x20{2}agent:\n([\s\S]*?)(?=\n\x20{2}[\w-]+:\n)/)?.[1];
+
+    expect(frontmatter).toContain("types: [opened]");
+    expect(frontmatter).toContain("roles: all");
+    expect(frontmatter).toContain("strict: true");
+    expect(source).toContain("Treat its title, body, links,");
+    expect(source).toContain("Use at most three targeted searches");
+    expect(source).toContain("no more than ten candidates total");
+    expect(source).toContain("Ask at most one focused question");
+    expect(source).toContain("Assignment is suggestion-only");
+    expect(source).toContain("Never close, edit, relabel, or mark any issue");
+    expect(safeOutputs).toMatch(/add-comment:\s+max:\s+1\s+target:\s+triggering/);
+    expect(source).toContain("create-issue: false");
+    expect(source).toContain("report-as-issue: false");
+    expect(safeOutputs).not.toMatch(/(?:add-labels|assign-to-user|close-issue):/);
+    expect(manifest).toContain('"tools":["add_comment","missing_data","missing_tool","noop"]');
+    expect(manifest).not.toMatch(/(?:close_issue|add_labels|assign_to_user)/);
+
+    expect(lock).toContain('"compiler_version":"v0.88.8"');
+    expect(lock).toContain("issues:\n    types:\n      - opened");
+    expect(lock).toContain("# roles: all");
+    expect(agentJob).toContain("contents: read");
+    expect(agentJob).toContain("issues: read");
+    expect(agentJob).not.toContain("issues: write");
+    expect(agentJob).not.toContain("contents: write");
+    expect(lock).toContain("  safe_outputs:\n");
+    expect(lock).toContain("issues: write");
+    expect(lock).not.toContain("pull-requests: write");
+    expect(lock).not.toContain("contents: write");
+  });
+
   it("requires the specification pull request to merge before implementation", () => {
     expect(read("docs/labs/01-openspec-and-harness.md").replace(/\s+/g, " ")).toContain(
       "approves, and merges the specification pull request",
