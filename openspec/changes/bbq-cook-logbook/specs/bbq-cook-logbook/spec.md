@@ -64,11 +64,14 @@ create or alter a saved log.
 
 The application SHALL allow a user to retrieve and review saved cook logs,
 including all recorded preparation, cook-event, observation, and rating values.
-Saved logs SHALL remain available after the application is restarted.
+When configured with durable storage, saved logs SHALL remain available after
+the application is restarted. The local in-memory mode is ephemeral and SHALL
+not claim to preserve logs across a server restart.
 
-#### Scenario: Browse and review persisted attempts
+#### Scenario: Browse and review attempts with durable storage
 
-- **WHEN** a user opens the cook logbook after saving one or more logs
+- **WHEN** a user opens the cook logbook after saving one or more logs to
+  configured durable storage, including after an application restart
 - **THEN** the application displays the saved attempts and lets the user inspect
   each complete record
 
@@ -77,6 +80,13 @@ Saved logs SHALL remain available after the application is restarted.
 - **WHEN** a user opens the logbook and no attempts have been saved
 - **THEN** the application presents a clear empty state and a path to create the
   first cook log
+
+#### Scenario: Use the local in-memory backend
+
+- **WHEN** a user runs the application with its local in-memory backend
+- **THEN** the user can create, browse, and review logs while that server
+  process is running, and the application does not claim those logs survive a
+  server restart
 
 ### Requirement: Provide accessible cook log interaction
 

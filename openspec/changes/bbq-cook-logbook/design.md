@@ -15,6 +15,9 @@ defect remediation, GH-AW, and evidence reconstruction.
 The repository's root CI currently selects the feedback application's paths;
 the capstone must therefore provide its own identifiable validation path
 without changing that application's source or broadening unrelated workflows.
+No Azure subscription is currently available for this work. The application
+already supports an explicit in-memory backend for local execution and an
+Azure Table backend for a future deployment.
 
 ## Goals / Non-Goals
 
@@ -24,8 +27,10 @@ without changing that application's source or broadening unrelated workflows.
   create/save then browse/review workflow.
 - Preserve the approved fields, units, ordering, validation boundaries, and
   accessible behavior across browser, API, and persistence boundaries.
-- Make the application independently testable and deployable within the
-  existing capstone governance and trust boundaries.
+- Make the application independently testable and runnable locally without
+  Azure credentials or cloud resources.
+- Preserve the Azure deployment path as follow-up work without presenting it
+  as validated or deployed.
 - Keep technical choices proportional to the 90–120 minute capstone and avoid
   new dependencies unless implementation demonstrates a concrete need.
 
@@ -34,6 +39,8 @@ without changing that application's source or broadening unrelated workflows.
 - Introduce a new repository-wide application, storage, or deployment pattern.
 - Define a framework, API protocol, storage vendor, Azure topology, or UI
   component structure in the product contract.
+- Provision Azure resources, validate against an Azure subscription, or deploy
+  the app during this local-only milestone.
 - Change root `DESIGN.md`, the feedback application, or existing shared
   workflow behavior.
 
@@ -69,6 +76,13 @@ independent service tests. The specific framework, wire protocol, and storage
 technology remain implementation choices because they do not alter the
 observable contract.
 
+Local execution explicitly selects the in-memory backend. It supports the
+create/browse workflow for the lifetime of the local server process, but data
+is ephemeral and is not expected to survive a restart. The app does not
+silently fall back from the Azure backend to memory. Azure Table persistence
+remains the durable deployment path and its validation is deferred until an
+assigned subscription, resource group, and authorized identity are available.
+
 ### Validate at both user and service boundaries
 
 The browser gives prompt, accessible field feedback, and the API independently
@@ -85,10 +99,11 @@ Implementation-specific form and schema libraries are not mandated.
 Keep app source, tests, local instructions, and infrastructure in
 `capstone/bbq-logbook/` wherever their owning tools permit. Use root-level
 workflow locations only where GitHub requires them, with capstone-specific
-names and least privilege. Use pinned AVM modules and the existing protected
-GitHub OIDC boundary; do not introduce long-lived cloud credentials or change
-shared policy. The required GH-AW has exactly one narrow safe output and no
-approval, merge, deployment, policy-bypass, or workflow-editing authority.
+names and least privilege. Future infrastructure uses pinned AVM modules and
+the existing protected GitHub OIDC boundary; do not introduce long-lived cloud
+credentials or change shared policy. The required GH-AW has exactly one narrow
+safe output and no approval, merge, deployment, policy-bypass, or
+workflow-editing authority.
 
 This preserves independent review and avoids the shared application workflow
 path. Copying or rebranding the feedback app, adding broad root workflow
@@ -103,21 +118,13 @@ and the functional log workflow over the built application's HTTP server. The
 server uses Node's built-in HTTP modules to serve the browser assets and route
 requests to the existing API/storage boundary; it adds no runtime dependency.
 The build copies the browser assets into the deployable output. Local smoke
-tests explicitly select in-memory storage, while production selects the
-configured Azure Table adapter and reports storage failure through readiness.
+tests explicitly select in-memory storage; production selects the configured
+Azure Table adapter and reports storage failure through readiness.
 
-The capstone deployment workflow reuses the existing protected `workshop`
-environment and OIDC variables, verifies a merged BBQ pull request and its
-required checks, then performs Azure validation and `what-if` before deploying
-the built app. Its deploy job alone receives `id-token: write`. Job summaries
-and retained artifacts report commit, test, infrastructure, and live results
-only after each corresponding check succeeds. Missing environment values or
-protection remain blockers; the workflow must not substitute credentials,
-resource scope, or deployment success.
-
-Delivery evidence must also show the reviewed commit, protected deployment,
-the real issue-driven defect fix, and the single GH-AW output, linked so a
-reviewer can reconstruct the result without session transcripts.
+Azure validation, `what-if`, protected deployment, deployed persistence checks,
+and cloud evidence collection are deferred. Their absence is recorded as a
+blocker, not a pass. Local tests and smoke checks prove the local workflow only
+and do not prove durable persistence across server restarts.
 
 Agent reports alone were rejected as evidence; this matches root
 `DESIGN.md`'s requirement for independently observable checks and deployment
@@ -139,6 +146,12 @@ record.
 - [Risk] A persistence or storage outage could make saved logs unavailable. →
   Make readiness dependency-aware, report safe errors, and verify durable
   retrieval after restart before deployment is considered complete.
+- [Risk] Local in-memory storage can be mistaken for durable persistence. →
+  State explicitly that local data is ephemeral, retain Azure Table as the
+  durable target, and do not claim restart persistence from local smoke tests.
+- [Risk] Azure access may remain unavailable. → Keep infrastructure,
+  deployment, and dependent evidence tasks visibly deferred until the assigned
+  subscription/scope and authorized identity are provided.
 - [Risk] UI/API validation rules could diverge. → Keep the same field
   constraints observable at both boundaries and test both valid and rejected
   submissions.
@@ -156,27 +169,27 @@ record.
   `capstone/bbq-logbook/`. Smoke must start the production HTTP entry point and
   verify browser assets, health, readiness, invalid-input rejection, and the
   create/browse flow; verify the not-ready HTTP response with unavailable
-  storage.
-- Build and validate the capstone Bicep entry point, then run Azure
-  `what-if` against the assigned resource group and parameter file before
-  deployment.
-- After protected deployment, verify the deployed commit, liveness,
-  dependency-aware readiness, create-and-review behavior, and record
-  persistence across application restart from independent workflow receipts.
-- Compile the GH-AW source with its generated lock file and inspect its actual
-  run and single issue-comment output.
+  storage. For an interactive local run, set `STORAGE_BACKEND=memory` and use
+  `npm start`; local records are not expected to survive a server restart.
+- Azure Bicep validation, `what-if`, deployment, and cloud receipts are
+  deferred. When Azure becomes available, run them against the assigned
+  resource group and approved parameter file before reactivating dependent
+  tasks.
+- Do not claim deployed persistence, a deployment-driven defect fix, or a
+  GH-AW evidence run until those cloud-dependent steps have actually passed.
 - Validate these planning artifacts with
   `openspec validate bbq-cook-logbook --strict`.
 
 ## Migration Plan
 
-This is a net-new application and has no existing user data to migrate. Deploy
-only after its focused CI, infrastructure validation, and protected
-environment checks pass. Rollback is limited to reverting or disabling
-capstone-specific delivery assets and, when explicitly approved, removing
-resources within the assigned capstone scope. Do not alter the feedback
-application, shared governance workflows, participant history, or unrelated
-Azure resources.
+This is a net-new application and has no existing user data to migrate. The
+current milestone runs locally and creates no Azure resources. When cloud
+deployment is resumed, deploy only after focused CI, infrastructure validation,
+and protected environment checks pass. Rollback is limited to reverting or
+disabling capstone-specific delivery assets and, when explicitly approved,
+removing resources within the assigned capstone scope. Do not alter the
+feedback application, shared governance workflows, participant history, or
+unrelated Azure resources.
 
 The exact environment-specific region, resource names, and compatible pinned
 AVM versions can be set when the team's approved Azure scope is known; these
@@ -188,9 +201,9 @@ Time-box recovery to ten minutes. Stop parallel work without deleting issues,
 branches, or pull requests, and return to the last reviewed application
 dependency with passing focused checks. Reduce incomplete work to the one
 Cook Log create/save and browse/review workflow, then continue in isolated,
-non-overlapping sessions or sequentially if ownership is unclear. If Azure or
-a licensed GitHub control is unavailable, record the exact limitation and
-retain local/CI evidence without describing it as a successful deployment or
-platform control. Resume from a reviewed checkpoint and create follow-up
-issues for missing delivery receipts rather than rewriting participant
-history.
+non-overlapping sessions or sequentially if ownership is unclear. The current
+Azure blocker is the absence of an available subscription; preserve local/CI
+evidence without describing it as successful deployment or durable
+cross-restart persistence. Resume Azure-dependent tasks only after an assigned
+scope and authorized identity are available, and create follow-up issues for
+missing delivery receipts rather than rewriting participant history.

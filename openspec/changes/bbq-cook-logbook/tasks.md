@@ -52,13 +52,15 @@
   readiness, validation rejection, and Cook Log create/browse. Verify existing
   workshop workflows remain unchanged.
 
-## 5. Azure infrastructure and protected deployment
+## 5. Deferred Azure infrastructure and protected deployment
 
-- [ ] 5.1 After task 2.1, compose required resources with pinned AVM modules
-  and least-privilege managed identity access in
-  `capstone/bbq-logbook/infra/**`; verify Bicep build, deployment validation,
-  and `what-if` against the assigned resource group and parameter file.
-- [ ] 5.2 After task 5.1, add only
+- [ ] 5.1 **Deferred: no Azure subscription is currently available.** The
+  resource-group-scoped AVM composition exists in
+  `capstone/bbq-logbook/infra/**`, but this task is incomplete until Bicep
+  build, deployment validation, and `what-if` are run against an assigned
+  resource group and approved parameter file.
+- [ ] 5.2 **Deferred until 5.1 is validated and protected Azure access is
+  available.** Verify the capstone deployment workflow in
   `.github/workflows/bbq-cook-logbook-deploy.yml` using the protected
   environment and existing GitHub OIDC trust with required
   permissions, granting `id-token: write` only to the deployment job. Require
@@ -66,25 +68,26 @@
   variables, and successful Azure validation/what-if before deployment; emit
   actionable summaries and a machine-readable receipt only for verified
   results. Verify workflow policy and absence of long-lived credentials.
-- [ ] 5.3 After tasks 4 and 5.2, deploy the reviewed application and capture
-  commit, URL, infrastructure result, liveness, readiness, and a
-  create-and-review smoke result; verify saved data remains available after
-  restart and retain independent platform receipts.
+- [ ] 5.3 **Deferred until 5.2 passes and an approved Azure scope is
+  available.** Deploy the reviewed application and capture commit, URL,
+  infrastructure result, liveness, readiness, and a create-and-review smoke
+  result; verify saved data remains available after restart and retain
+  independent platform receipts.
 
 ## 6. Ticket-driven defect remediation
 
-- [ ] 6.1 After task 5.3, reproduce one realistic defect in the integrated or
-  deployed application and file a bounded bug issue linked to parent issue #9
-  and the relevant scenario; verify the issue records expected/actual
-  behavior, reproduction evidence, owned/prohibited paths, and focused
-  validation.
-- [ ] 6.2 After task 6.1, fix the defect in a fresh isolated session and add
-  the smallest regression test; verify the test fails before the fix, passes
-  after it, and the linked pull request has independent passing checks.
+- [ ] 6.1 **Deferred until deployed task 5.3.** Reproduce one realistic defect
+  in the integrated or deployed application and file a bounded bug issue
+  linked to parent issue #9 and the relevant scenario; verify the issue
+  records expected/actual behavior, reproduction evidence, owned/prohibited
+  paths, and focused validation.
+- [ ] 6.2 **Deferred until 6.1.** Fix the defect in a fresh isolated session
+  and add the smallest regression test; verify the test fails before the fix,
+  passes after it, and the linked pull request has independent passing checks.
 
 ## 7. Narrow GH-AW operational feedback
 
-- [ ] 7.1 After task 6.2, create
+- [ ] 7.1 **Deferred until task 6.2 and cloud evidence are available.** Create
   `.github/workflows/bbq-cook-logbook-evidence.md` and its generated lock file
   as a capstone-specific GH-AW that reads the real issue, pull request,
   checks, security, deployment, and defect evidence and produces
@@ -92,18 +95,20 @@
   with its generated lock file, issue-comment permission is its only write
   authority, and it has no approval, merge, deployment, policy-bypass, or
   workflow-editing authority.
-- [ ] 7.2 After task 7.1, run the workflow against the completed capstone
+- [ ] 7.2 **Deferred until 7.1 and the deployment evidence are available.** Run
+  the workflow against the completed capstone
   evidence and retain
   the real run receipt and single safe output; verify missing evidence is
   reported honestly and no second output is produced.
 
 ## 8. Evidence reconstruction and recovery
 
-- [ ] 8.1 After task 7.2, link the parent issue, approved OpenSpec artifacts,
+- [ ] 8.1 **Deferred until task 7.2.** Link the parent issue, approved OpenSpec artifacts,
   bounded task issues, pull requests, focused checks, deployment and smoke
   receipts, defect fix, and GH-AW output; verify a fresh reviewer can
   reconstruct the outcome without session transcripts.
-- [ ] 8.2 Record any unavailable licensed control or cloud dependency in the
-  linked issue/evidence and verify the recovery instructions from task 1.1
-  resume a checkpoint at the last reviewed dependency without claiming missing
-  platform evidence as passed.
+- [ ] 8.2 Record the unavailable Azure subscription in the linked issue and
+  verify the recovery instructions from task 1.1 resume a checkpoint at the
+  last reviewed dependency without claiming missing platform evidence as
+  passed. The local-only milestone does not close or pass the deferred cloud
+  tasks.
